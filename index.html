@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boarding House Billing System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-bottom: 70px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #3a6186, #89253e);
+            color: white;
+            padding: 20px 0;
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 20px;
+        }
+        .bill-summary {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #343a40;
+            color: white;
+            padding: 10px 0;
+        }
+        .tenant-card {
+            transition: transform 0.2s;
+        }
+        .tenant-card:hover {
+            transform: translateY(-5px);
+        }
+        .print-btn {
+            background: linear-gradient(135deg, #3a6186, #89253e);
+            border: none;
+        }
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            .header p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header text-center">
+        <div class="container">
+            <h1><i class="fas fa-home"></i> Boarding House Billing System</h1>
+            <p>Manage tenants and generate bills easily</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Tenant Selection and Billing Form -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Billing Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="billingForm">
+                            <div class="mb-3">
+                                <label for="tenantSelect" class="form-label">Select Tenant</label>
+                                <select class="form-select" id="tenantSelect">
+                                    <option value="" selected disabled>Select a tenant</option>
+                                    <option value="1">John Doe - Room 101</option>
+                                    <option value="2">Jane Smith - Room 102</option>
+                                    <option value="3">Robert Johnson - Room 201</option>
+                                    <option value="4">Sarah Williams - Room 202</option>
+                                    <option value="5">Michael Brown - Room 301</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dueDate" class="form-label">Due Date</label>
+                                <input type="date" class="form-control" id="dueDate" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="rentAmount" class="form-label">Rent Amount (₱)</label>
+                                <input type="number" class="form-control" id="rentAmount" placeholder="Enter rent amount" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="electricityBill" class="form-label">Electricity Bill (₱)</label>
+                                <input type="number" class="form-control" id="electricityBill" placeholder="Enter electricity bill" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="unpaidRent" class="form-label">Unpaid Rent (₱)</label>
+                                <input type="number" class="form-control" id="unpaidRent" placeholder="Enter unpaid rent" value="0">
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-calculator"></i> Calculate Total</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Bill Summary -->
+                <div class="card mt-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-receipt"></i> Bill Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="bill-summary">
+                            <p><strong>Tenant:</strong> <span id="summaryTenant">Not selected</span></p>
+                            <p><strong>Due Date:</strong> <span id="summaryDueDate">-</span></p>
+                            <hr>
+                            <p><strong>Rent Amount:</strong> ₱<span id="summaryRent">0.00</span></p>
+                            <p><strong>Electricity Bill:</strong> ₱<span id="summaryElectricity">0.00</span></p>
+                            <p><strong>Unpaid Rent:</strong> ₱<span id="summaryUnpaid">0.00</span></p>
+                            <hr>
+                            <h4><strong>Total Amount Due:</strong> ₱<span id="summaryTotal">0.00</span></h4>
+                        </div>
+                        <div class="d-grid gap-2 mt-3">
+                            <button id="printBtn" class="btn print-btn text-white" disabled>
+                                <i class="fas fa-print"></i> Print via Bluetooth
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tenant Management -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-users"></i> Tenant Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2 mb-3">
+                            <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#addTenantModal">
+                                <i class="fas fa-plus-circle"></i> Add New Tenant
+                            </button>
+                        </div>
+                        
+                        <!-- Tenant List -->
+                        <div class="list-group" id="tenantList">
+                            <div class="list-group-item tenant-card">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">John Doe</h5>
+                                    <small>Room 101</small>
+                                </div>
+                                <p class="mb-1">Contact: john.doe@example.com</p>
+                                <small>Status: <span class="text-success">Current</span></small>
+                            </div>
+                            <div class="list-group-item tenant-card">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Jane Smith</h5>
+                                    <small>Room 102</small>
+                                </div>
+                                <p class="mb-1">Contact: jane.smith@example.com</p>
+                                <small>Status: <span class="text-success">Current</span></small>
+                            </div>
+                            <div class="list-group-item tenant-card">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Robert Johnson</h5>
+                                    <small>Room 201</small>
+                                </div>
+                                <p class="mb-1">Contact: robert.j@example.com</p>
+                                <small>Status: <span class="text-warning">Pending</span></small>
+                            </div>
+                            <div class="list-group-item tenant-card">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Sarah Williams</h5>
+                                    <small>Room 202</small>
+                                </div>
+                                <p class="mb-1">Contact: sarah.w@example.com</p>
+                                <small>Status: <span class="text-success">Current</span></small>
+                            </div>
+                            <div class="list-group-item tenant-card">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Michael Brown</h5>
+                                    <small>Room 301</small>
+                                </div>
+                                <p class="mb-1">Contact: michael.b@example.com</p>
+                                <small>Status: <span class="text-danger">Overdue</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer text-center">
+        <div class="container">
+            <p class="mb-0">Boarding House Billing System &copy; 2023</p>
+        </div>
+    </div>
+
+    <!-- Add Tenant Modal -->
+    <div class="modal fade" id="addTenantModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Tenant</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTenantForm">
+                        <div class="mb-3">
+                            <label for="tenantName" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="tenantName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="roomNumber" class="form-label">Room Number</label>
+                            <input type="text" class="form-control" id="roomNumber" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactInfo" class="form-label">Contact Information</label>
+                            <input type="text" class="form-control" id="contactInfo" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveTenantBtn">Save Tenant</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default due date to today + 7 days
+            const today = new Date();
+            const dueDate = new Date(today);
+            dueDate.setDate(today.getDate() + 7);
+            document.getElementById('dueDate').valueAsDate = dueDate;
+            
+            // Form submission handler
+            document.getElementById('billingForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                calculateBill();
+            });
+            
+            // Tenant selection handler
+            document.getElementById('tenantSelect').addEventListener('change', function() {
+                updateTenantSummary();
+            });
+            
+            // Save tenant handler
+            document.getElementById('saveTenantBtn').addEventListener('click', function() {
+                addNewTenant();
+            });
+            
+            // Print button handler
+            document.getElementById('printBtn').addEventListener('click', function() {
+                printViaBluetooth();
+            });
+            
+            function calculateBill() {
+                const rent = parseFloat(document.getElementById('rentAmount').value) || 0;
+                const electricity = parseFloat(document.getElementById('electricityBill').value) || 0;
+                const unpaid = parseFloat(document.getElementById('unpaidRent').value) || 0;
+                
+                const total = rent + electricity + unpaid;
+                
+                document.getElementById('summaryRent').textContent = rent.toFixed(2);
+                document.getElementById('summaryElectricity').textContent = electricity.toFixed(2);
+                document.getElementById('summaryUnpaid').textContent = unpaid.toFixed(2);
+                document.getElementById('summaryTotal').textContent = total.toFixed(2);
+                
+                document.getElementById('printBtn').disabled = false;
+            }
+            
+            function updateTenantSummary() {
+                const select = document.getElementById('tenantSelect');
+                const selectedOption = select.options[select.selectedIndex];
+                
+                if (selectedOption.value) {
+                    const tenantText = selectedOption.text;
+                    document.getElementById('summaryTenant').textContent = tenantText;
+                    
+                    // Set due date if not already set
+                    if (!document.getElementById('dueDate').value) {
+                        const today = new Date();
+                        const dueDate = new Date(today);
+                        dueDate.setDate(today.getDate() + 7);
+                        document.getElementById('dueDate').valueAsDate = dueDate;
+                    }
+                    
+                    document.getElementById('summaryDueDate').textContent = 
+                        new Date(document.getElementById('dueDate').value).toLocaleDateString();
+                }
+            }
+            
+            function addNewTenant() {
+                const name = document.getElementById('tenantName').value;
+                const room = document.getElementById('roomNumber').value;
+                const contact = document.getElementById('contactInfo').value;
+                
+                if (name && room && contact) {
+                    // Add to dropdown
+                    const select = document.getElementById('tenantSelect');
+                    const option = document.createElement('option');
+                    option.value = (select.options.length - 1).toString();
+                    option.textContent = `${name} - Room ${room}`;
+                    select.appendChild(option);
+                    
+                    // Add to tenant list
+                    const tenantList = document.getElementById('tenantList');
+                    const newTenant = document.createElement('div');
+                    newTenant.className = 'list-group-item tenant-card';
+                    newTenant.innerHTML = `
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">${name}</h5>
+                            <small>Room ${room}</small>
+                        </div>
+                        <p class="mb-1">Contact: ${contact}</p>
+                        <small>Status: <span class="text-success">Current</span></small>
+                    `;
+                    tenantList.appendChild(newTenant);
+                    
+                    // Close modal and reset form
+                    document.getElementById('addTenantForm').reset();
+                    bootstrap.Modal.getInstance(document.getElementById('addTenantModal')).hide();
+                    
+                    alert('Tenant added successfully!');
+                } else {
+                    alert('Please fill all fields');
+                }
+            }
+            
+            function printViaBluetooth() {
+                // In a real application, this would connect to a Bluetooth thermal printer
+                // This is a simulation for demonstration purposes
+                
+                const tenant = document.getElementById('summaryTenant').textContent;
+                const dueDate = document.getElementById('summaryDueDate').textContent;
+                const rent = document.getElementById('summaryRent').textContent;
+                const electricity = document.getElementById('summaryElectricity').textContent;
+                const unpaid = document.getElementById('summaryUnpaid').textContent;
+                const total = document.getElementById('summaryTotal').textContent;
+                
+                const receipt = `
+================================
+      BOARDING HOUSE BILL
+================================
+Tenant: ${tenant}
+Due Date: ${dueDate}
+--------------------------------
+Rent Amount: ₱${rent}
+Electricity Bill: ₱${electricity}
+Unpaid Rent: ₱${unpaid}
+--------------------------------
+TOTAL DUE: ₱${total}
+================================
+        Thank you!
+================================
+                `;
+                
+                alert('Connecting to Bluetooth printer...\n\nPrinting receipt:\n\n' + receipt);
+                
+                // In a real implementation, you would use the Web Bluetooth API
+                // Here's a simplified example of how it might work:
+                /*
+                navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['generic_access'] }]
+                })
+                .then(device => {
+                    // Connect to the device and send print data
+                    return device.gatt.connect();
+                })
+                .then(server => {
+                    // Get the service and characteristic for printing
+                    return server.getPrimaryService('generic_access');
+                })
+                .then(service => {
+                    // Send the receipt text to the printer
+                    // Actual implementation would vary by printer
+                })
+                .catch(error => {
+                    console.error('Bluetooth printing error:', error);
+                    alert('Printing failed: ' + error.message);
+                });
+                */
+            }
+        });
+    </script>
+</body>
+</html>
